@@ -866,6 +866,7 @@ jobs:
           mkdir -p geosite/srs geoip/srs
           for dir in geosite geoip; do
               for file in $dir/classical/*.list; do
+                  [ -s "$file" ] || continue
                   name=$(basename "$file" .list)
                   json="$dir/${name}.json"
                   awk -F',' '
@@ -942,6 +943,7 @@ jobs:
         run: |
           for dir in geosite geoip; do
               for file in $dir/classical/*.list; do
+                  [ -s "$file" ] || continue
                   name=$(basename "$file" .list)
 
                   # shadowrocket
