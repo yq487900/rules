@@ -8,20 +8,23 @@ on:
       - master
     paths-ignore:
       - "**/README.md"
+
+concurrency:
+  group: ruleset-build
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      actions: write
+      actions: write 
     steps:
       - name: Set variables
         run: |
           echo "update_version=$(date -d '+8 hours' +%Y-%m-%d)" >> ${GITHUB_ENV}
-          echo "mihomo_domains=meta-rules/geo/geosite/classical" >> ${GITHUB_ENV}
-          echo "mihomo_ipcidr=meta-rules/geo/geoip/classical" >> ${GITHUB_ENV}
-          echo "mihomo_geosite=meta-rules/geo/geosite" >> ${GITHUB_ENV}
-          echo "mihomo_geoip=meta-rules/geo/geoip" >> ${GITHUB_ENV}
+          echo "mihomo_domains=meta-rules/geo/geosite" >> ${GITHUB_ENV}
+          echo "mihomo_ipcidr=meta-rules/geo/geoip" >> ${GITHUB_ENV}
           echo "bm7_surge=bm7-rules/rule/Surge" >> ${GITHUB_ENV}
         shell: bash
 
@@ -35,8 +38,9 @@ jobs:
           ref: meta
           path: "meta-rules"
           sparse-checkout: |
-            geo/geosite
-            geo/geoip
+            geo/geosite/*.list
+            geo/geoip/*.list
+          sparse-checkout-cone-mode: false
 
       - name: Checkout "blackmatrix7/ios_rule_script"
         uses: actions/checkout@v7
@@ -63,7 +67,7 @@ jobs:
         run: |
           cd ls-geoip || exit 1
           rm -f convert.go init.go list.go lookup.go
-          go build -o ../geoip-merge
+          go build -o ../geoip
 
       - name: Make directories
         run: |
@@ -87,60 +91,15 @@ jobs:
           mkdir -p loon
           mkdir -p egern
           mkdir -p push
-          mkdir -p geosite/classical
-          mkdir -p geosite/domain
-          mkdir -p geosite/mrs
-          mkdir -p geosite/srs
-          mkdir -p geosite/surge
-          mkdir -p geosite/shadowrocket
-          mkdir -p geosite/quantumultx
-          mkdir -p geosite/loon
-          mkdir -p geosite/egern
-          mkdir -p geoip/classical
-          mkdir -p geoip/ipcidr
-          mkdir -p geoip/mrs
-          mkdir -p geoip/srs
-          mkdir -p geoip/surge
-          mkdir -p geoip/shadowrocket
-          mkdir -p geoip/quantumultx
-          mkdir -p geoip/loon
-          mkdir -p geoip/egern
-
-      - name: Convert geosite to classical (full mirror)
-        run: |
-          source scripts/ruleset_process.sh
-          for file in ${mihomo_geosite}/*.list; do
-              name=$(basename "$file" .list)
-              clash_domain_to_classical "$file" > "geosite/classical/${name}.list"
-          done
-
-      - name: Convert geoip to classical (full mirror)
-        run: |
-          for file in ${mihomo_geoip}/*.list; do
-              name=$(basename "$file" .list)
-              awk 'NF { if ($0 ~ /:/) print "IP-CIDR6," $0 ",no-resolve"; else print "IP-CIDR," $0 ",no-resolve" }' "$file" > "geoip/classical/${name}.list"
-          done
-
-      - name: Copy mihomo domain/ipcidr text and mrs (full mirror)
-        run: |
-          cp ${mihomo_geosite}/*.list geosite/domain/
-          cp ${mihomo_geosite}/*.mrs  geosite/mrs/
-          cp ${mihomo_geoip}/*.list   geoip/ipcidr/
-          cp ${mihomo_geoip}/*.mrs    geoip/mrs/
 
       - name: Download meta ruleset
         run: |
-          domain_lists=('category-ads-all' 'category-httpdns-cn' 'apple' 'microsoft@cn' 'onedrive' 'microsoft' 'github' 'gitlab' 'gitee' 'gitbook' 'apple-intelligence' 'category-ai-!cn' 'amazon' 'shopify' 'category-ecommerce' 'paypal' 'wise' 'category-cryptocurrency' 'category-game-accelerator-cn' 'category-game-platforms-download@cn' 'category-games@cn' 'category-game-platforms-download' 'category-games-!cn' 'category-forums' 'talkatone' 'discord' 'line' 'telegram' 'signal' 'whatsapp' 'category-social-media-!cn' 'tiktok' 'bilibili' 'googlefcm' 'youtube' 'google' 'spotify' 'twitch' 'bahamut' 'hbo' 'disney' 'primevideo' 'netflix' 'hulu' 'abema' 'dmm' 'niconico' 'apple-tvplus' 'dazn' 'mytvsuper' 'category-cdn-!cn' 'category-speedtest@cn' 'category-speedtest' 'test-ipv6@cn' 'test-ipv6' 'tld-!cn' 'category-public-tracker' 'tracker' 'category-pt@!cn' 'category-pt' 'category-anticensorship' 'gfw' 'private' 'nga' 'xiaohongshu' 'sina' 'zhihu' 'douban' 'coolapk')
+          domain_lists=('cn' 'category-ads-all' 'category-httpdns-cn' 'apple' 'microsoft@cn' 'onedrive' 'microsoft' 'github' 'gitlab' 'gitee' 'gitbook' 'apple-intelligence' 'category-ai-!cn' 'amazon' 'shopify' 'category-ecommerce' 'paypal' 'wise' 'category-cryptocurrency' 'category-game-accelerator-cn' 'category-game-platforms-download@cn' 'category-games@cn' 'category-game-platforms-download' 'category-games-!cn' 'category-forums' 'talkatone' 'discord' 'line' 'telegram' 'signal' 'whatsapp' 'category-social-media-!cn' 'tiktok' 'bilibili' 'googlefcm' 'youtube' 'google' 'spotify' 'twitch' 'bahamut' 'hbo' 'disney' 'primevideo' 'netflix' 'hulu' 'abema' 'dmm' 'niconico' 'apple-tvplus' 'dazn' 'mytvsuper' 'category-cdn-!cn' 'category-speedtest@cn' 'category-speedtest' 'test-ipv6@cn' 'test-ipv6' 'tld-!cn' 'category-public-tracker' 'tracker' 'category-pt@!cn' 'category-pt' 'category-anticensorship' 'gfw' 'private' 'nga' 'xiaohongshu' 'sina' 'zhihu' 'douban' 'coolapk')
+
+          source scripts/ruleset_process.sh
 
           for list in "${domain_lists[@]}"; do
-              cp "${mihomo_domains}/${list}.list" "download/meta/${list}.list"
-          done
-
-          ipcidr_lists=('facebook' 'telegram' 'twitter' 'google' 'netflix' 'private')
-
-          for list in "${ipcidr_lists[@]}"; do
-              echo >> "download/meta/${list}.list"
-              cat "${mihomo_ipcidr}/${list}.list" >> "download/meta/${list}.list"
+              clash_domain_to_classical "${mihomo_domains}/${list}.list" > "download/meta/${list}.list"
           done
 
           files=(
@@ -158,6 +117,13 @@ jobs:
           for file in "${files[@]}"; do
               set -- $file
               curl -fsSL "$2" > "download/meta/$1" || { echo "Download Failed: $1"; exit 1; }
+          done
+
+          ipcidr_lists=('facebook' 'telegram' 'twitter' 'google' 'netflix' 'private' 'cn' 'ad' 'ai')
+
+          for list in "${ipcidr_lists[@]}"; do
+              echo >> "download/meta/${list}.list"
+              awk '!/^\s*[#;]/ && NF { if ($0 ~ /:/) print "IP-CIDR6," $0 ",no-resolve"; else print "IP-CIDR," $0 ",no-resolve" }' "${mihomo_ipcidr}/${list}.list" >> "download/meta/${list}.list"
           done
 
           sed -n '/## >> 抖音/,/##/{//!p}' "download/meta/DouYin.list" > tmp.list && mv tmp.list "download/meta/douyin.list"
@@ -300,7 +266,7 @@ jobs:
         run: |
           cp 'download/meta/microsoft@cn.list' 'meta/microsoft-cn.list'
           cp 'download/meta/tld-!cn.list' 'meta/tld-proxy.list'
-          cp 'download/special/cn-cidr.list' 'meta/cncidr.list'
+          cat 'download/meta/cn.list' 'download/special/cn-cidr.list' > 'meta/cncidr.list'
           cp 'custom/apns.list' 'meta/apns.list'
 
       - name: Merge files
@@ -352,6 +318,7 @@ jobs:
               'download/surge/AntiAD.list' \
               'download/surge/PCDN.list' \
               'download/meta/category-ads-all.list' \
+              'download/meta/ad.list' \
               'meta/httpdns.list' \
               | \
               grep -vxF -f 'custom/reject-need-to-remove.list' \
@@ -588,7 +555,7 @@ jobs:
 
           for file in meta/*.list ; do
               if grep -q '^IP-CIDR' "${file}"; then
-                  awk -F, '/^IP-CIDR/ { print $2; next }' "${file}" | ./geoip-merge merge | awk '/:/ { print "IP-CIDR6," $0 ",no-resolve"; next } { print "IP-CIDR," $0 ",no-resolve" }' > tmp_cidr.list
+                  awk -F, '/^IP-CIDR/ { print $2; next }' "${file}" | ./geoip merge | awk '/:/ { print "IP-CIDR6," $0 ",no-resolve"; next } { print "IP-CIDR," $0 ",no-resolve" }' > tmp_cidr.list
 
                   format_ruleset_no_cidr "${file}" | domain_dedupe > tmp_no_cidr.list
 
@@ -861,165 +828,10 @@ jobs:
               }' "$file" > "surge/$(basename "$file")"
           done
 
-      - name: Generate sing-box srs (full mirror)
+      - name: Clean meta and stash root files
         run: |
-          mkdir -p geosite/srs geoip/srs
-          for dir in geosite geoip; do
-              for file in $dir/classical/*.list; do
-                  [ -s "$file" ] || continue
-                  name=$(basename "$file" .list)
-                  json="$dir/${name}.json"
-                  awk -F',' '
-                  BEGIN {
-                      printf "{\n";
-                      printf "  \"version\": 1,\n";
-                      printf "  \"rules\": [\n";
-                      printf "    {\n";
-                  }
-                  {
-                      if($1 == "DOMAIN-REGEX" && match($0, ",")){
-                          $2 = substr($0, RSTART + 1);
-                          gsub(/\\/, "\\\\", $2);
-                      }
-                      sub(/^"/, "", $2);
-                      sub(/^'"'"'/, "", $2);
-                      sub(/"$/, "", $2);
-                      sub(/'"'"'$/, "", $2);
-                      $2 = "\"" $2 "\"";
-                      if ($1 == "DOMAIN") {
-                          if (!domain++) {
-                              if (NR > 1) printf "\n      ],\n";
-                              printf "      \"domain\": [\n";
-                              printf "        %s", $2;
-                          } else {
-                              printf ",\n        %s", $2;
-                          }
-                      } else if ($1 == "DOMAIN-SUFFIX") {
-                          if (!suffix++) {
-                              if (NR > 1) printf "\n      ],\n";
-                              printf "      \"domain_suffix\": [\n";
-                              printf "        %s", $2;
-                          } else {
-                              printf ",\n        %s", $2;
-                          }
-                      } else if ($1 == "DOMAIN-KEYWORD") {
-                          if (!keyword++) {
-                              if (NR > 1) printf "\n      ],\n";
-                              printf "      \"domain_keyword\": [\n";
-                              printf "        %s", $2;
-                          } else {
-                              printf ",\n        %s", $2;
-                          }
-                      } else if ($1 == "DOMAIN-REGEX") {
-                          if (!regex++) {
-                              if (NR > 1) printf "\n      ],\n";
-                              printf "      \"domain_regex\": [\n";
-                              printf "        %s", $2;
-                          } else {
-                              printf ",\n        %s", $2;
-                          }
-                      } else if ($1 == "IP-CIDR" || $1 == "IP-CIDR6") {
-                          if (!cidr++) {
-                              if (NR > 1) printf "\n      ],\n";
-                              printf "      \"ip_cidr\": [\n";
-                              printf "        %s", $2;
-                          } else {
-                              printf ",\n        %s", $2;
-                          }
-                      }
-                  }
-                  END {
-                      printf "\n      ]\n";
-                      printf "    }\n";
-                      printf "  ]\n";
-                      printf "}\n";
-                  }' "$file" > "$json"
-                  ./sing-box rule-set compile --output "$dir/srs/${name}.srs" "$json"
-                  rm -f "$json"
-              done
-          done
-
-      - name: Generate platform rulesets (full mirror)
-        run: |
-          for dir in geosite geoip; do
-              for file in $dir/classical/*.list; do
-                  [ -s "$file" ] || continue
-                  name=$(basename "$file" .list)
-
-                  # shadowrocket
-                  awk '{
-                      if ($0 ~/^DOMAIN-REGEX,/ || $0 ~ /^PROCESS-NAME,/) next;
-                      sub(/^IP-CIDR6/, "IP-CIDR");
-                      print;
-                  }' "$file" > "$dir/shadowrocket/${name}.list"
-
-                  # quantumultx
-                  awk -v filename="${name}" '{
-                      if ($0 ~ /^DOMAIN-REGEX,/ || $0 ~ /^PROCESS-NAME,/) next;
-                      sub(/^DOMAIN/, "HOST");
-                      sub(/^DOMAIN-SUFFIX/, "HOST-SUFFIX");
-                      sub(/^DOMAIN-KEYWORD/, "HOST-KEYWORD");
-                      sub(/^DOMAIN-WILDCARD/, "HOST-WILDCARD");
-                      sub(/^IP-CIDR6/, "IP6-CIDR");
-                      sub(/,no-resolve$/, "");
-                      print $0 "," filename;
-                  }' "$file" > "$dir/quantumultx/${name}.list"
-
-                  # loon
-                  awk '{
-                      if ($0 ~ /^DOMAIN-WILDCARD,/ || $0 ~ /^DOMAIN-REGEX,/ || $0 ~ /^PROCESS-NAME,/) next;
-                      print;
-                  }' "$file" > "$dir/loon/${name}.list"
-
-                  # egern
-                  grep -q ',no-resolve$' "$file" && found_no_resolve=1 || found_no_resolve=0
-                  awk -F',' -v found_no_resolve="$found_no_resolve" '
-                  BEGIN {
-                      if (found_no_resolve) print "no_resolve: true";
-                  }
-                  {
-                      if($1 == "DOMAIN-REGEX" && match($0, ",")){
-                          $2 = substr($0, RSTART + 1);
-                      }
-                      sub(/^"/, "", $2);
-                      sub(/^'"'"'/, "", $2);
-                      sub(/"$/, "", $2);
-                      sub(/'"'"'$/, "", $2);
-                      chars = "[{}\\[\\]&*#|<>!%@`]"
-                      if ($2 ~ "^" chars) {
-                          $2 = sprintf("\x27%s\x27", $2);
-                      }
-                      if ($1 == "DOMAIN") {
-                          if (!domain++) print "domain_set:";
-                          print "- " $2;
-                      } else if ($1 == "DOMAIN-SUFFIX") {
-                          if (!suffix++) print "domain_suffix_set:";
-                          print "- " $2;
-                      } else if ($1 == "DOMAIN-KEYWORD") {
-                          if (!keyword++) print "domain_keyword_set:";
-                          print "- " $2;
-                      } else if ($1 == "DOMAIN-WILDCARD") {
-                          if (!wildcard++) print "domain_wildcard_set:";
-                          print "- " $2;
-                      } else if ($1 == "DOMAIN-REGEX") {
-                          if (!regex++) print "domain_regex_set:";
-                          print "- " $2;
-                      } else if ($1 == "IP-CIDR") {
-                          if (!cidr++) print "ip_cidr_set:";
-                          print "- " $2;
-                      } else if ($1 == "IP-CIDR6") {
-                          if (!cidr6++) print "ip_cidr6_set:";
-                          print "- " $2;
-                      }
-                  }' "$file" > "$dir/egern/${name}.yaml"
-
-                  # surge
-                  awk '{
-                      if ($0 ~ /^DOMAIN-REGEX,/) next;
-                      print;
-                  }' "$file" > "$dir/surge/${name}.list"
-              done
-          done
+          rm -f meta/*.list
+          rm -f stash/*.list
 
       - name: Move files to push directory
         run: |
@@ -1031,8 +843,6 @@ jobs:
           cp -r quantumultx/ push/
           cp -r loon/ push/
           cp -r egern/ push/
-          cp -r geosite/ push/
-          cp -r geoip/ push/
 
       - name: Git push assets to "ruleset" branch
         run: |
@@ -1044,7 +854,15 @@ jobs:
           git add .
           git commit -m "Auto Update Ruleset ${update_version}"
           git remote add origin "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
-          git push -f origin ruleset
+          for attempt in 1 2 3 4 5; do
+              if git push -f origin ruleset; then
+                  echo "Push succeeded on attempt ${attempt}"
+                  exit 0
+              fi
+              echo "Push attempt ${attempt} failed, retrying in 10s..."
+              sleep 10
+          done
+          exit 1
 
       - name: Purge jsdelivr CDN
         run: |
