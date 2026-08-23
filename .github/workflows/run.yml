@@ -94,7 +94,7 @@ jobs:
 
       - name: Download meta ruleset
         run: |
-          domain_lists=('cn' 'category-ads-all' 'category-httpdns-cn' 'apple' 'microsoft@cn' 'onedrive' 'microsoft' 'github' 'gitlab' 'gitee' 'gitbook' 'apple-intelligence' 'category-ai-!cn' 'amazon' 'shopify' 'category-ecommerce' 'paypal' 'wise' 'category-cryptocurrency' 'category-game-accelerator-cn' 'category-game-platforms-download@cn' 'category-games@cn' 'category-game-platforms-download' 'category-games-!cn' 'category-forums' 'talkatone' 'discord' 'line' 'telegram' 'signal' 'whatsapp' 'category-social-media-!cn' 'tiktok' 'bilibili' 'googlefcm' 'youtube' 'google' 'spotify' 'twitch' 'bahamut' 'hbo' 'disney' 'primevideo' 'netflix' 'hulu' 'abema' 'dmm' 'niconico' 'apple-tvplus' 'dazn' 'mytvsuper' 'category-cdn-!cn' 'category-speedtest@cn' 'category-speedtest' 'test-ipv6@cn' 'test-ipv6' 'tld-!cn' 'category-public-tracker' 'tracker' 'category-pt@!cn' 'category-pt' 'category-anticensorship' 'gfw' 'private' 'nga' 'xiaohongshu' 'sina' 'zhihu' 'douban' 'coolapk')
+          domain_lists=('cn' 'openai' 'category-ads-all' 'category-httpdns-cn' 'apple' 'microsoft@cn' 'onedrive' 'microsoft' 'github' 'gitlab' 'gitee' 'gitbook' 'apple-intelligence' 'category-ai-!cn' 'amazon' 'shopify' 'category-ecommerce' 'paypal' 'wise' 'category-cryptocurrency' 'category-game-accelerator-cn' 'category-game-platforms-download@cn' 'category-games@cn' 'category-game-platforms-download' 'category-games-!cn' 'category-forums' 'talkatone' 'discord' 'line' 'telegram' 'signal' 'whatsapp' 'category-social-media-!cn' 'tiktok' 'bilibili' 'googlefcm' 'youtube' 'google' 'spotify' 'twitch' 'bahamut' 'hbo' 'disney' 'primevideo' 'netflix' 'hulu' 'abema' 'dmm' 'niconico' 'apple-tvplus' 'dazn' 'mytvsuper' 'category-cdn-!cn' 'category-speedtest@cn' 'category-speedtest' 'test-ipv6@cn' 'test-ipv6' 'tld-!cn' 'category-public-tracker' 'tracker' 'category-pt@!cn' 'category-pt' 'category-anticensorship' 'gfw' 'private' 'nga' 'xiaohongshu' 'sina' 'zhihu' 'douban' 'coolapk')
 
           source scripts/ruleset_process.sh
 
@@ -119,7 +119,7 @@ jobs:
               curl -fsSL "$2" > "download/meta/$1" || { echo "Download Failed: $1"; exit 1; }
           done
 
-          ipcidr_lists=('facebook' 'telegram' 'twitter' 'google' 'netflix' 'private' 'cn' 'ad' 'ai')
+          ipcidr_lists=('facebook' 'telegram' 'twitter' 'google' 'netflix' 'private' 'cn' 'ad' 'ai' 'cloudflare')
 
           for list in "${ipcidr_lists[@]}"; do
               echo >> "download/meta/${list}.list"
@@ -268,6 +268,7 @@ jobs:
           cp 'download/meta/tld-!cn.list' 'meta/tld-proxy.list'
           cat 'download/meta/cn.list' 'download/special/cn-cidr.list' > 'meta/cncidr.list'
           cp 'custom/apns.list' 'meta/apns.list'
+          cp 'download/meta/cloudflare.list' 'meta/cloudflare.list'
 
       - name: Merge files
         run: |
@@ -416,6 +417,7 @@ jobs:
               'download/meta/apple-intelligence.list' \
               'download/meta/category-ai-!cn.list' \
               'download/meta/ai.list' \
+              'download/meta/openai.list' \
           > meta/ai.list
 
       - name: Merge ecommerce file
