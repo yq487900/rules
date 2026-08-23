@@ -63,7 +63,7 @@ jobs:
         run: |
           cd ls-geoip || exit 1
           rm -f convert.go init.go list.go lookup.go
-          go build -o ../geoip
+          go build -o ../geoip-merge
 
       - name: Make directories
         run: |
@@ -588,7 +588,7 @@ jobs:
 
           for file in meta/*.list ; do
               if grep -q '^IP-CIDR' "${file}"; then
-                  awk -F, '/^IP-CIDR/ { print $2; next }' "${file}" | ./geoip merge | awk '/:/ { print "IP-CIDR6," $0 ",no-resolve"; next } { print "IP-CIDR," $0 ",no-resolve" }' > tmp_cidr.list
+                  awk -F, '/^IP-CIDR/ { print $2; next }' "${file}" | ./geoip-merge merge | awk '/:/ { print "IP-CIDR6," $0 ",no-resolve"; next } { print "IP-CIDR," $0 ",no-resolve" }' > tmp_cidr.list
 
                   format_ruleset_no_cidr "${file}" | domain_dedupe > tmp_no_cidr.list
 
