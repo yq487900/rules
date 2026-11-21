@@ -1,0 +1,2 @@
+DOMAIN-SUFFIX,okaapps.com
+DOMAIN,DOMAIN-REGEX,^(.+\.)*zh\.okaapps\.com$
